@@ -12,6 +12,14 @@ import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.name.Named;
 
+
+
+/**
+ * @author Shmulik and Eyal
+ * 
+ * Created at : 11:37 AM 3.12.14
+ *
+ */
 public class HttpProxy extends AbstractHttpProxy {
 
 	@Inject
