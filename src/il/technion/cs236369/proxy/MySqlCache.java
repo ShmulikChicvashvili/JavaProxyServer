@@ -21,7 +21,7 @@ import com.mysql.jdbc.Statement;
  */
 public class MySqlCache implements ICache
 {
-
+	
 	/**
 	 * @author Shmulik
 	 *
@@ -46,9 +46,9 @@ public class MySqlCache implements ICache
 		 */
 		lastmodified
 	}
-
-
-
+	
+	
+	
 	/**
 	 * @param connectionEstablisher
 	 *            The class which handles the connection establishment
@@ -60,8 +60,8 @@ public class MySqlCache implements ICache
 			connectionEstablisher.getDatabaseName(),
 			connectionEstablisher.getTable());
 	} /* (non-Javadoc) @see il.technion.cs236369.proxy.ICache#buildTable() */
-
-
+	
+	
 	@Override
 	public void buildTable() throws SQLException
 	{
@@ -81,8 +81,8 @@ public class MySqlCache implements ICache
 			statement.execute(createTable);
 		}
 	}
-
-
+	
+	
 	/* (non-Javadoc) @see il.technion.cs236369.proxy.ICache#destroyTable() */
 	@Override
 	public void destroyTable() throws SQLException
@@ -97,8 +97,8 @@ public class MySqlCache implements ICache
 			statement.execute(destroyTable);
 		}
 	}
-
-
+	
+	
 	/**
 	 * @param url
 	 *            URL
@@ -107,7 +107,7 @@ public class MySqlCache implements ICache
 	public DBRecord get(String url)
 	{
 		if (url == null) { return null; }
-		
+
 		DBRecord $ = null;
 		try (
 			Connection con = connectionEstablisher.getConnection();
@@ -144,8 +144,8 @@ public class MySqlCache implements ICache
 		}
 		return $;
 	}
-	
-	
+
+
 	/**
 	 * @param record
 	 *            The record to insert
@@ -159,7 +159,7 @@ public class MySqlCache implements ICache
 			|| record.getHeader() == null
 			|| record.getBody() == null
 			|| record.getLastModified() == null) { return SqlError.INVALID_PARAMS; }
-
+		
 		try (
 			Connection con = connectionEstablisher.getConnection();
 			@SuppressWarnings("nls")
@@ -184,8 +184,8 @@ public class MySqlCache implements ICache
 		}
 		return SqlError.SUCCESS;
 	}
-
-
+	
+	
 	/**
 	 * @param url
 	 *            The url to check if exist
@@ -221,8 +221,8 @@ public class MySqlCache implements ICache
 		}
 		return $;
 	}
-
-
+	
+	
 	/**
 	 * @param record
 	 *            Record to update
@@ -235,9 +235,9 @@ public class MySqlCache implements ICache
 			|| record.getHeader() == null
 			|| record.getBody() == null
 			|| record.getLastModified() == null) { return SqlError.INVALID_PARAMS; }
-
+		
 		if (!isExist(record.getUrl())) { return SqlError.DOES_NOT_EXIST; }
-
+		
 		try (
 			Connection con = connectionEstablisher.getConnection();
 			@SuppressWarnings("nls")
@@ -259,22 +259,22 @@ public class MySqlCache implements ICache
 		{
 			e.printStackTrace();
 		}
-
+		
 		return SqlError.SUCCESS;
 	}
-
-
-
+	
+	
+	
 	/**
 	 * The connection handler
 	 */
 	private final MySqlConnectionEstablisher connectionEstablisher;
-
+	
 	/**
 	 * The table's name in the database
 	 */
 	private final String table;
-
+	
 	/**
 	 * The error code that returned when entry in database already exist
 	 */
