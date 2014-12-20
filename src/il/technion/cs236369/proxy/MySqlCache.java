@@ -32,19 +32,19 @@ public class MySqlCache implements ICache
 		/**
 		 * URL column
 		 */
-		url,
+		URL,
 		/**
 		 * Header column
 		 */
-		header,
+		HEADER,
 		/**
 		 * Body column
 		 */
-		body,
+		BODY,
 		/**
 		 * Last modified column
 		 */
-		lastmodified
+		LASTMODIFIED
 	}
 	
 	
@@ -74,10 +74,10 @@ public class MySqlCache implements ICache
 					+ "(%s VARCHAR(255) PRIMARY KEY, " //$NON-NLS-1$
 					+ "%s TEXT, %s BLOB, %s VARCHAR(255))", //$NON-NLS-1$
 					table,
-					Columns.url.toString().toLowerCase(),
-					Columns.header.toString().toLowerCase(),
-					Columns.body.toString().toLowerCase(),
-					Columns.lastmodified.toString().toLowerCase());
+					Columns.URL.toString().toLowerCase(),
+					Columns.HEADER.toString().toLowerCase(),
+					Columns.BODY.toString().toLowerCase(),
+					Columns.LASTMODIFIED.toString().toLowerCase());
 			statement.execute(createTable);
 		}
 	}
@@ -116,7 +116,7 @@ public class MySqlCache implements ICache
 				(PreparedStatement) con.prepareStatement(String.format(
 					"SELECT * FROM %s WHERE %s = ?",
 					table,
-					Columns.url.toString().toLowerCase())))
+					Columns.URL.toString().toLowerCase())))
 		{
 			preparedStatement.setString(1, url.toLowerCase());
 			final ResultSet resultSet = preparedStatement.executeQuery();
@@ -124,16 +124,16 @@ public class MySqlCache implements ICache
 			{
 				$ =
 					new DBRecord(
-						resultSet.getString(Columns.url
+						resultSet.getString(Columns.URL
 							.toString()
 							.toLowerCase()),
-						resultSet.getString(Columns.header
+						resultSet.getString(Columns.HEADER
 							.toString()
 							.toLowerCase()),
-						resultSet.getString(Columns.body
+						resultSet.getString(Columns.BODY
 							.toString()
 							.toLowerCase()),
-						resultSet.getString(Columns.lastmodified
+						resultSet.getString(Columns.LASTMODIFIED
 							.toString()
 							.toLowerCase()));
 			}
@@ -167,10 +167,10 @@ public class MySqlCache implements ICache
 				(PreparedStatement) con.prepareStatement(String.format(
 					"INSERT INTO %s " + "(%s, %s, %s, %s) VALUES (?, ?, ?, ?)",
 					table,
-					Columns.url.toString().toLowerCase(),
-					Columns.header.toString().toLowerCase(),
-					Columns.body.toString().toLowerCase(),
-					Columns.lastmodified.toString().toLowerCase())))
+					Columns.URL.toString().toLowerCase(),
+					Columns.HEADER.toString().toLowerCase(),
+					Columns.BODY.toString().toLowerCase(),
+					Columns.LASTMODIFIED.toString().toLowerCase())))
 		{
 			preparedStatement.setString(1, record.getUrl().toLowerCase());
 			preparedStatement.setString(2, record.getHeader());
@@ -204,7 +204,7 @@ public class MySqlCache implements ICache
 					+ "SELECT * FROM " //$NON-NLS-1$
 					+ table
 					+ " WHERE " //$NON-NLS-1$
-					+ Columns.url.toString().toLowerCase()
+					+ Columns.URL.toString().toLowerCase()
 					+ "=?;"))
 		{
 			preparedStatement.setString(1, urlCheck);
@@ -245,10 +245,10 @@ public class MySqlCache implements ICache
 				(PreparedStatement) con.prepareStatement(String.format(
 					"UPDATE %s SET %s = ?, %s = ?, %s = ? WHERE %s = ?",
 					table,
-					Columns.header.toString().toLowerCase(),
-					Columns.body.toString().toLowerCase(),
-					Columns.lastmodified.toString().toLowerCase(),
-					Columns.url.toString().toLowerCase())))
+					Columns.HEADER.toString().toLowerCase(),
+					Columns.BODY.toString().toLowerCase(),
+					Columns.LASTMODIFIED.toString().toLowerCase(),
+					Columns.URL.toString().toLowerCase())))
 		{
 			preparedStatement.setString(1, record.getHeader());
 			preparedStatement.setString(2, record.getBody());
