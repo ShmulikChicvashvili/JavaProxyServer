@@ -195,6 +195,7 @@ public class HttpProxy extends AbstractHttpProxy
 		final HttpService httpService,
 		final HttpServerConnection conn)
 	{
+		System.err.flush();
 		System.out.println("@@@ Handling new request @@@");
 		final HttpContext context = new BasicHttpContext(null);
 		try
