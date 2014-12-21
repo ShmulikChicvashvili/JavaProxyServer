@@ -16,6 +16,7 @@ import org.apache.http.HttpClientConnection;
 import org.apache.http.HttpException;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpRequest;
+import org.apache.http.HttpRequestInterceptor;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpServerConnection;
 import org.apache.http.entity.ByteArrayEntity;
@@ -47,11 +48,11 @@ import com.google.inject.name.Named;
  */
 public class HttpProxy extends AbstractHttpProxy
 {
-
+	
 	@SuppressWarnings("javadoc")
 	private class ProxyHandler implements HttpRequestHandler
 	{
-
+		
 		/* (non-Javadoc) @see
 		 * org.apache.http.protocol.HttpRequestHandler#handle(
 		 * org.apache.http.HttpRequest, org.apache.http.HttpResponse,
@@ -65,7 +66,7 @@ public class HttpProxy extends AbstractHttpProxy
 		{
 			final HttpHost host =
 				new HttpHost(request.getHeaders("host")[0].getValue(), 80);
-			
+
 			System.out.println("Host:" + host.getHostName());
 			try (
 				final Socket sock =
@@ -83,7 +84,7 @@ public class HttpProxy extends AbstractHttpProxy
 					+ serverResponse.getStatusLine().toString());
 				response.setStatusLine(serverResponse.getStatusLine());
 				response.setHeaders(serverResponse.getAllHeaders());
-
+				
 				if (serverResponse.getEntity() != null)
 				{
 					final ByteArrayEntity entity =
@@ -91,18 +92,19 @@ public class HttpProxy extends AbstractHttpProxy
 							EntityUtils.toByteArray(serverResponse.getEntity()));
 					entity.setChunked(serverResponse.getEntity().isChunked());
 					EntityUtils.updateEntity(response, entity);
+					EntityUtils.consume(serverResponse.getEntity());
 				}
 			}
-			
+
 			System.out.println("Request:");
 			System.out.println(request.toString());
 			System.out.println("Response:");
 			System.out.println(response.toString());
 		}
 	}
-
-
-
+	
+	
+	
 	@SuppressWarnings({ "javadoc", "nls", "resource" })
 	public static void main(String[] args) throws Exception
 	{
@@ -113,16 +115,16 @@ public class HttpProxy extends AbstractHttpProxy
 		final IHttpProxy proxy = inj.getInstance(HttpProxy.class);
 		proxy.bind();
 		proxy.start();
-
+		
 	}
-
-
+	
+	
 	@SuppressWarnings("javadoc")
 	@Inject
 	HttpProxy(
 		SocketFactory sockFactory,
 		ServerSocketFactory srvSockFactory,
-
+		
 		@Named("httproxy.net.port") int port,
 		@Named("httproxy.db.url") String dbURL,
 		@Named("httproxy.db.name") String dbName,
@@ -144,28 +146,43 @@ public class HttpProxy extends AbstractHttpProxy
 			dbDriver);
 		// Add your code here
 	}
-
-
+	
+	
 	@Override
 	public void bind() throws IOException
 	{
 		// Add your code here
 	}
-
-
+	
+	
 	@SuppressWarnings({ "synthetic-access", "nls" })
 	@Override
 	public void start()
 	{
 		final HttpProcessor proc = HttpProcessorBuilder.create()
 		// .add(new ResponseContent(true))
+			.add(new HttpRequestInterceptor()
+			{
+				
+				@Override
+				public void process(HttpRequest arg0, HttpContext arg1)
+					throws HttpException,
+					IOException
+				{
+					if (arg0.containsHeader("Connection"))
+					{
+						arg0.removeHeaders("Connection");
+					}
+					arg0.addHeader("Connection", "close");
+				}
+			})
 			.build();
 		final UriHttpRequestHandlerMapper registry =
 			new UriHttpRequestHandlerMapper();
 		registry.register("*", new ProxyHandler());
-
+		
 		final HttpService httpService = new HttpService(proc, registry);
-
+		
 		try (
 			ServerSocket serverSocket =
 				srvSockFactory.createServerSocket(port, port, null))
@@ -178,7 +195,7 @@ public class HttpProxy extends AbstractHttpProxy
 				final HttpServerConnection conn =
 					DefaultBHttpServerConnectionFactory.INSTANCE
 						.createConnection(sock);
-				
+
 				handleSingleRequest(httpService, conn);
 			}
 		} catch (final IOException e)
@@ -186,10 +203,10 @@ public class HttpProxy extends AbstractHttpProxy
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-
+		
 	}
-
-
+	
+	
 	@SuppressWarnings({ "static-method", "javadoc", "nls" })
 	private void handleSingleRequest(
 		final HttpService httpService,
