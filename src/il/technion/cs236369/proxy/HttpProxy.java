@@ -12,6 +12,7 @@ import javax.net.ServerSocketFactory;
 import javax.net.SocketFactory;
 
 import org.apache.http.ConnectionClosedException;
+import org.apache.http.Header;
 import org.apache.http.HttpClientConnection;
 import org.apache.http.HttpException;
 import org.apache.http.HttpHost;
@@ -66,7 +67,7 @@ public class HttpProxy extends AbstractHttpProxy
 		{
 			final HttpHost host =
 				new HttpHost(request.getHeaders("host")[0].getValue(), 80);
-
+			
 			System.out.println("Host:" + host.getHostName());
 			try (
 				final Socket sock =
@@ -76,30 +77,79 @@ public class HttpProxy extends AbstractHttpProxy
 					DefaultBHttpClientConnectionFactory.INSTANCE
 						.createConnection(sock))
 			{
-				final HttpRequestExecutor httpExecutor =
-					new HttpRequestExecutor();
-				final HttpResponse serverResponse =
-					httpExecutor.execute(request, conn, context);
-				System.out.println("Server response status: "
-					+ serverResponse.getStatusLine().toString());
-				response.setStatusLine(serverResponse.getStatusLine());
-				response.setHeaders(serverResponse.getAllHeaders());
-				
-				if (serverResponse.getEntity() != null)
-				{
-					final ByteArrayEntity entity =
-						new ByteArrayEntity(
-							EntityUtils.toByteArray(serverResponse.getEntity()));
-					entity.setChunked(serverResponse.getEntity().isChunked());
-					EntityUtils.updateEntity(response, entity);
-					EntityUtils.consume(serverResponse.getEntity());
-				}
+				response =
+					getResponseFromServer(request, response, context, conn);
 			}
-
+			
 			System.out.println("Request:");
 			System.out.println(request.toString());
 			System.out.println("Response:");
 			System.out.println(response.toString());
+		}
+		
+		
+		/**
+		 * @param request
+		 * @param response
+		 * @param context
+		 * @param conn
+		 * @throws IOException
+		 * @throws HttpException
+		 */
+		private HttpResponse getResponseFromServer(
+			HttpRequest request,
+			HttpResponse response,
+			HttpContext context,
+			HttpClientConnection conn) throws IOException, HttpException
+		{
+			final HttpRequestExecutor httpExecutor = new HttpRequestExecutor();
+			final HttpResponse serverResponse =
+				httpExecutor.execute(request, conn, context);
+			System.out.println("Server response status: "
+				+ serverResponse.getStatusLine().toString());
+			response.setStatusLine(serverResponse.getStatusLine());
+			response.setHeaders(serverResponse.getAllHeaders());
+			
+			if (serverResponse.getEntity() != null)
+			{
+				ByteArrayEntity entity =
+					new ByteArrayEntity(EntityUtils.toByteArray(serverResponse
+						.getEntity()));
+				entity.setChunked(serverResponse.getEntity().isChunked());
+				if (isAcceptingGzip(request))
+				{
+					entity =
+						new ByteArrayEntity(GZipHandler.compress(EntityUtils
+							.toByteArray(entity)
+							.toString()));
+					EntityUtils.updateEntity(response, entity);
+					response.addHeader("Content-Encoding", "gzip");
+				} else
+				{
+					EntityUtils.updateEntity(response, entity);
+				}
+				EntityUtils.consume(serverResponse.getEntity());
+			}
+			return response;
+		}
+		
+		
+		/**
+		 * @param request
+		 */
+		private boolean isAcceptingGzip(HttpRequest request)
+		{
+			boolean $ = false;
+			final Header[] headers = request.getAllHeaders();
+			for (final Header h : headers)
+			{
+				if (h.getName().equals("Accept-Encoding")
+					&& h.getValue().contains("gzip"))
+				{
+					$ = true;
+				}
+			}
+			return $;
 		}
 	}
 	
@@ -195,7 +245,7 @@ public class HttpProxy extends AbstractHttpProxy
 				final HttpServerConnection conn =
 					DefaultBHttpServerConnectionFactory.INSTANCE
 						.createConnection(sock);
-
+				
 				handleSingleRequest(httpService, conn);
 			}
 		} catch (final IOException e)

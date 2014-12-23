@@ -8,6 +8,7 @@ package il.technion.cs236369.proxy;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
@@ -29,13 +30,17 @@ public class GZipHandler
 	 *             e
 	 */
 	@SuppressWarnings("nls")
-	public static byte[] compress(String str) throws Exception
+	public static byte[] compress(String str)
 	{
 		if (str == null || str.length() == 0) { return null; }
 		final ByteArrayOutputStream obj = new ByteArrayOutputStream();
 		try (final GZIPOutputStream gzip = new GZIPOutputStream(obj))
 		{
 			gzip.write(str.getBytes("UTF-8"));
+		} catch (final IOException e)
+		{
+			System.err.println("Failed to create GZIPOutputSteam");
+			e.printStackTrace();
 		}
 		return obj.toByteArray();
 	}
