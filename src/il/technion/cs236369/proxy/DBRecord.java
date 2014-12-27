@@ -5,6 +5,11 @@
 package il.technion.cs236369.proxy;
 
 
+import java.sql.Blob;
+
+
+
+
 /**
  * @author Shmulik
  *
@@ -21,15 +26,15 @@ public class DBRecord
 	 * @param lastModified
 	 *            Last modified
 	 */
-	public DBRecord(String url, String header, String body, String lastModified)
+	public DBRecord(String url, String header, Blob body, String lastModified)
 	{
 		this.url = url;
 		this.header = header;
 		this.body = body;
 		LastModified = lastModified;
 	}
-
-
+	
+	
 	/* (non-Javadoc) @see java.lang.Object#equals(java.lang.Object) */
 	@Override
 	public boolean equals(Object obj)
@@ -37,21 +42,24 @@ public class DBRecord
 		final DBRecord other = (DBRecord) obj;
 		return other.url.toLowerCase().equals(url.toLowerCase())
 			&& other.header.toLowerCase().equals(header.toLowerCase())
-			&& other.body.toLowerCase().equals(body.toLowerCase())
+			&& other.body
+				.toString()
+				.toLowerCase()
+				.equals(body.toString().toLowerCase())
 			&& other.LastModified.toLowerCase().equals(
 				LastModified.toLowerCase());
 	}
-
-
+	
+	
 	/**
 	 * @return the body
 	 */
-	public String getBody()
+	public Blob getBody()
 	{
 		return body;
 	}
-
-
+	
+	
 	/**
 	 * @return the header
 	 */
@@ -59,8 +67,8 @@ public class DBRecord
 	{
 		return header;
 	}
-
-
+	
+	
 	/**
 	 * @return the lastModified
 	 */
@@ -68,8 +76,8 @@ public class DBRecord
 	{
 		return LastModified;
 	}
-
-
+	
+	
 	/**
 	 * @return the url
 	 */
@@ -77,18 +85,18 @@ public class DBRecord
 	{
 		return url;
 	}
-
-
+	
+	
 	/**
 	 * @param body
 	 *            the body to set
 	 */
-	public void setBody(String body)
+	public void setBody(Blob body)
 	{
 		this.body = body;
 	}
-
-
+	
+	
 	/**
 	 * @param header
 	 *            the header to set
@@ -97,8 +105,8 @@ public class DBRecord
 	{
 		this.header = header;
 	}
-
-
+	
+	
 	/**
 	 * @param lastModified
 	 *            the lastModified to set
@@ -107,8 +115,8 @@ public class DBRecord
 	{
 		LastModified = lastModified;
 	}
-
-
+	
+	
 	/**
 	 * @param url
 	 *            the url to set
@@ -117,8 +125,8 @@ public class DBRecord
 	{
 		this.url = url;
 	}
-	
-	
+
+
 	/* (non-Javadoc) @see java.lang.Object#toString() */
 	@SuppressWarnings("nls")
 	@Override
@@ -133,27 +141,27 @@ public class DBRecord
 			+ " Last Modified: "
 			+ LastModified;
 	}
-	
-	
-	
+
+
+
 	/**
 	 * URL
 	 */
 	String url;
-
+	
 	/**
 	 * Header
 	 */
 	String header;
-
+	
 	/**
 	 * Body
 	 */
-	String body;
-	
+	Blob body;
+
 	/**
 	 * Last modified
 	 */
 	String LastModified;
-
+	
 }

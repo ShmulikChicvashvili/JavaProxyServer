@@ -21,7 +21,7 @@ import com.mysql.jdbc.Statement;
  */
 public class MySqlCache implements ICache
 {
-	
+
 	/**
 	 * @author Shmulik
 	 *
@@ -46,9 +46,9 @@ public class MySqlCache implements ICache
 		 */
 		LASTMODIFIED
 	}
-	
-	
-	
+
+
+
 	/**
 	 * @param connectionEstablisher
 	 *            The class which handles the connection establishment
@@ -60,8 +60,8 @@ public class MySqlCache implements ICache
 			connectionEstablisher.getDatabaseName(),
 			connectionEstablisher.getTable());
 	} /* (non-Javadoc) @see il.technion.cs236369.proxy.ICache#buildTable() */
-	
-	
+
+
 	@Override
 	public void buildTable() throws SQLException
 	{
@@ -81,8 +81,8 @@ public class MySqlCache implements ICache
 			statement.execute(createTable);
 		}
 	}
-	
-	
+
+
 	/* (non-Javadoc) @see il.technion.cs236369.proxy.ICache#destroyTable() */
 	@Override
 	public void destroyTable() throws SQLException
@@ -97,17 +97,18 @@ public class MySqlCache implements ICache
 			statement.execute(destroyTable);
 		}
 	}
-	
-	
+
+
 	/**
 	 * @param url
 	 *            URL
 	 * @return The record with that url
 	 */
+	@Override
 	public DBRecord get(String url)
 	{
 		if (url == null) { return null; }
-
+		
 		DBRecord $ = null;
 		try (
 			Connection con = connectionEstablisher.getConnection();
@@ -130,9 +131,8 @@ public class MySqlCache implements ICache
 						resultSet.getString(Columns.HEADER
 							.toString()
 							.toLowerCase()),
-						resultSet.getString(Columns.BODY
-							.toString()
-							.toLowerCase()),
+						resultSet
+							.getBlob(Columns.BODY.toString().toLowerCase()),
 						resultSet.getString(Columns.LASTMODIFIED
 							.toString()
 							.toLowerCase()));
@@ -144,22 +144,24 @@ public class MySqlCache implements ICache
 		}
 		return $;
 	}
-
-
+	
+	
 	/**
 	 * @param record
 	 *            The record to insert
 	 * @return SqlError
+	 * @throws SQLException
 	 *
 	 */
-	public SqlError insert(DBRecord record)
+	@Override
+	public SqlError insert(DBRecord record) throws SQLException
 	{
 		if (record == null
 			|| record.getUrl() == null
 			|| record.getHeader() == null
 			|| record.getBody() == null
 			|| record.getLastModified() == null) { return SqlError.INVALID_PARAMS; }
-		
+
 		try (
 			Connection con = connectionEstablisher.getConnection();
 			@SuppressWarnings("nls")
@@ -174,23 +176,26 @@ public class MySqlCache implements ICache
 		{
 			preparedStatement.setString(1, record.getUrl().toLowerCase());
 			preparedStatement.setString(2, record.getHeader());
-			preparedStatement.setString(3, record.getBody());
+			preparedStatement.setBlob(3, record.getBody());
 			preparedStatement.setString(4, record.getLastModified());
 			preparedStatement.executeUpdate();
 		} catch (final SQLException e)
 		{
-			if (e.getErrorCode() == insertAlreadyExist) { return SqlError.ALREADY_EXIST; }
-			e.printStackTrace();
+			if (e.getErrorCode() == insertAlreadyExist) { throw new RuntimeException();
+			// return SqlError.ALREADY_EXIST;
+			}
+			throw e;
 		}
 		return SqlError.SUCCESS;
 	}
-	
-	
+
+
 	/**
 	 * @param url
 	 *            The url to check if exist
 	 * @return Whether url exist or not
 	 */
+	@Override
 	@SuppressWarnings("nls")
 	public boolean isExist(String url)
 	{
@@ -221,13 +226,14 @@ public class MySqlCache implements ICache
 		}
 		return $;
 	}
-	
-	
+
+
 	/**
 	 * @param record
 	 *            Record to update
 	 * @return The state of the query
 	 */
+	@Override
 	public SqlError update(DBRecord record)
 	{
 		if (record == null
@@ -235,9 +241,9 @@ public class MySqlCache implements ICache
 			|| record.getHeader() == null
 			|| record.getBody() == null
 			|| record.getLastModified() == null) { return SqlError.INVALID_PARAMS; }
-		
+
 		if (!isExist(record.getUrl())) { return SqlError.DOES_NOT_EXIST; }
-		
+
 		try (
 			Connection con = connectionEstablisher.getConnection();
 			@SuppressWarnings("nls")
@@ -251,7 +257,7 @@ public class MySqlCache implements ICache
 					Columns.URL.toString().toLowerCase())))
 		{
 			preparedStatement.setString(1, record.getHeader());
-			preparedStatement.setString(2, record.getBody());
+			preparedStatement.setBlob(2, record.getBody());
 			preparedStatement.setString(3, record.getLastModified());
 			preparedStatement.setString(4, record.getUrl().toLowerCase());
 			preparedStatement.executeUpdate();
@@ -259,22 +265,22 @@ public class MySqlCache implements ICache
 		{
 			e.printStackTrace();
 		}
-		
+
 		return SqlError.SUCCESS;
 	}
-	
-	
-	
+
+
+
 	/**
 	 * The connection handler
 	 */
 	private final MySqlConnectionEstablisher connectionEstablisher;
-	
+
 	/**
 	 * The table's name in the database
 	 */
 	private final String table;
-	
+
 	/**
 	 * The error code that returned when entry in database already exist
 	 */

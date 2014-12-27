@@ -44,8 +44,8 @@ public class GZipHandler
 		}
 		return obj.toByteArray();
 	}
-	
-	
+
+
 	/**
 	 * @param bytes
 	 *            The compressed gzip

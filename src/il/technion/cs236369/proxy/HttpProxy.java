@@ -3,23 +3,31 @@ package il.technion.cs236369.proxy;
 
 
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.sql.Blob;
+import java.sql.SQLException;
 import java.util.Properties;
 
 import javax.net.ServerSocketFactory;
 import javax.net.SocketFactory;
+import javax.sql.rowset.serial.SerialBlob;
+import javax.sql.rowset.serial.SerialException;
 
 import org.apache.http.ConnectionClosedException;
-import org.apache.http.Header;
 import org.apache.http.HttpClientConnection;
+import org.apache.http.HttpEntity;
 import org.apache.http.HttpException;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpRequest;
 import org.apache.http.HttpRequestInterceptor;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpServerConnection;
+import org.apache.http.ParseException;
+import org.apache.http.ProtocolVersion;
 import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.impl.DefaultBHttpClientConnectionFactory;
 import org.apache.http.impl.DefaultBHttpServerConnectionFactory;
@@ -30,6 +38,7 @@ import org.apache.http.protocol.HttpProcessorBuilder;
 import org.apache.http.protocol.HttpRequestExecutor;
 import org.apache.http.protocol.HttpRequestHandler;
 import org.apache.http.protocol.HttpService;
+import org.apache.http.protocol.ResponseContent;
 import org.apache.http.protocol.UriHttpRequestHandlerMapper;
 import org.apache.http.util.EntityUtils;
 
@@ -47,18 +56,17 @@ import com.google.inject.name.Named;
  *         Created at : 11:37 AM 3.12.14
  *
  */
+@SuppressWarnings("nls")
 public class HttpProxy extends AbstractHttpProxy
 {
-	
 	@SuppressWarnings("javadoc")
 	private class ProxyHandler implements HttpRequestHandler
 	{
-		
+
 		/* (non-Javadoc) @see
 		 * org.apache.http.protocol.HttpRequestHandler#handle(
 		 * org.apache.http.HttpRequest, org.apache.http.HttpResponse,
 		 * org.apache.http.protocol.HttpContext) */
-		@SuppressWarnings("nls")
 		@Override
 		public void handle(
 			HttpRequest request,
@@ -67,27 +75,81 @@ public class HttpProxy extends AbstractHttpProxy
 		{
 			final HttpHost host =
 				new HttpHost(request.getHeaders("host")[0].getValue(), 80);
-			
 			System.out.println("Host:" + host.getHostName());
-			try (
-				final Socket sock =
-					sockFactory
-						.createSocket(host.getHostName(), host.getPort());
-				HttpClientConnection conn =
-					DefaultBHttpClientConnectionFactory.INSTANCE
-						.createConnection(sock))
+
+			if (cache.isExist(request.getRequestLine().getUri()))
 			{
-				response =
-					getResponseFromServer(request, response, context, conn);
+				getFromCache(request, response);
+				responseSetContentHeaders(response, context);
+				System.err.println("Getting from Cache");
 			}
-			
+
+			else
+			{
+				try (
+					final Socket sock =
+						sockFactory.createSocket(
+							host.getHostName(),
+							host.getPort());
+					HttpClientConnection conn =
+						DefaultBHttpClientConnectionFactory.INSTANCE
+							.createConnection(sock))
+				{
+					getResponseFromServer(request, response, context, conn);
+					if (Utils.isAcceptingGzip(request))
+					{
+						
+						responseGZipEntity(
+							response,
+							(ByteArrayEntity) response.getEntity());
+						
+					}
+					responseSetContentHeaders(response, context);
+					
+					insertIntoCache(request, response);
+
+				}
+			}
 			System.out.println("Request:");
 			System.out.println(request.toString());
 			System.out.println("Response:");
 			System.out.println(response.toString());
 		}
-		
-		
+
+
+		/**
+		 * @param request
+		 * @param response
+		 * @throws IOException
+		 */
+		private void getFromCache(HttpRequest request, HttpResponse response)
+			throws IOException
+		{
+			System.out.println("Getting resource from cache");
+			final DBRecord recordResponse =
+				cache.get(request.getRequestLine().getUri());
+			
+			System.out.println("Printing headers");
+			System.out.println(recordResponse.getHeader());
+
+			Utils.stringToResponse(recordResponse.getHeader(), response);
+			response
+				.setStatusLine(new ProtocolVersion("HTTP", 1, 1), 200, "OK");
+			try
+			{
+				EntityUtils.updateEntity(
+					response,
+					new ByteArrayEntity(recordResponse.getBody().getBytes(
+						1,
+						(int) recordResponse.getBody().length())));
+			} catch (final SQLException e)
+			{
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+
+
 		/**
 		 * @param request
 		 * @param response
@@ -96,7 +158,8 @@ public class HttpProxy extends AbstractHttpProxy
 		 * @throws IOException
 		 * @throws HttpException
 		 */
-		private HttpResponse getResponseFromServer(
+		@SuppressWarnings("boxing")
+		private void getResponseFromServer(
 			HttpRequest request,
 			HttpResponse response,
 			HttpContext context,
@@ -109,55 +172,146 @@ public class HttpProxy extends AbstractHttpProxy
 				+ serverResponse.getStatusLine().toString());
 			response.setStatusLine(serverResponse.getStatusLine());
 			response.setHeaders(serverResponse.getAllHeaders());
-			
+
 			if (serverResponse.getEntity() != null)
 			{
-				ByteArrayEntity entity =
+
+				System.out.println("Original length");
+				System.out.println(serverResponse
+					.getEntity()
+					.getContentLength());
+
+				final ByteArrayEntity entity =
 					new ByteArrayEntity(EntityUtils.toByteArray(serverResponse
 						.getEntity()));
 				entity.setChunked(serverResponse.getEntity().isChunked());
-				if (isAcceptingGzip(request))
-				{
-					entity =
-						new ByteArrayEntity(GZipHandler.compress(EntityUtils
-							.toByteArray(entity)
-							.toString()));
-					EntityUtils.updateEntity(response, entity);
-					response.addHeader("Content-Encoding", "gzip");
-				} else
-				{
-					EntityUtils.updateEntity(response, entity);
-				}
+				EntityUtils.updateEntity(response, entity);
 				EntityUtils.consume(serverResponse.getEntity());
 			}
-			return response;
 		}
-		
-		
+
+
 		/**
 		 * @param request
+		 * @param response
+		 * @throws SerialException
+		 * @throws SQLException
+		 * @throws IOException
+		 * @throws RuntimeException
 		 */
-		private boolean isAcceptingGzip(HttpRequest request)
+		private
+			void
+			insertIntoCache(HttpRequest request, HttpResponse response)
 		{
-			boolean $ = false;
-			final Header[] headers = request.getAllHeaders();
-			for (final Header h : headers)
+			if (response.getStatusLine().getStatusCode() >= 200
+				&& response.getStatusLine().getStatusCode() <= 399)
 			{
-				if (h.getName().equals("Accept-Encoding")
-					&& h.getValue().contains("gzip"))
+				try
 				{
-					$ = true;
+					final Blob body =
+						new SerialBlob(EntityUtils.toByteArray(response
+							.getEntity()));
+					System.out.println("entity response");
+					System.out.println(response.getEntity().getContentLength());
+					if (body.length() < 65535)
+					{
+
+						System.out.println("Inserting body of size");
+						System.out.println(body.length());
+						cache.insert(new DBRecord(
+							request.getRequestLine().getUri(),
+							Utils.responseToString(response),
+							body,
+							""));
+
+					}
+
+				} catch (final Exception e)
+				{
+					e.printStackTrace();
 				}
 			}
-			return $;
 		}
+
+
+		/**
+		 * @param response
+		 * @param entity
+		 * @throws IOException
+		 * @throws ParseException
+		 */
+		private void responseGZipEntity(
+			HttpResponse response,
+			ByteArrayEntity entity) throws IOException, ParseException
+		{
+			final byte[] ent =
+				GZipHandler.compress(EntityUtils.toString(entity));
+			entity = new ByteArrayEntity(ent);
+			responseSetHeaders(response, entity);
+			assert response
+				.getFirstHeader("Content-Length")
+				.getValue()
+				.equals(entity.getContentLength());
+			EntityUtils.updateEntity(response, entity);
+		}
+
+
+		/**
+		 * @param response
+		 * @param context
+		 * @throws HttpException
+		 * @throws IOException
+		 */
+		private void responseSetContentHeaders(
+			HttpResponse response,
+			HttpContext context) throws HttpException, IOException
+		{
+			response.removeHeaders("Content-Length");
+			response.removeHeaders("Transfer-encoding");
+			final HttpProcessor proc =
+				HttpProcessorBuilder
+					.create()
+					.add(new ResponseContent())
+					.build();
+			proc.process(response, context);
+		}
+
+
+		/**
+		 * @param response
+		 * @param ent
+		 */
+		private void responseSetHeaders(HttpResponse response, HttpEntity ent)
+		{
+			if (response.containsHeader("Content-Encoding"))
+			{
+				response.removeHeaders("Content-Encoding");
+			}
+			response.addHeader("Content-Encoding", "gzip");
+			// if (response.containsHeader("Content-Length"))
+			// {
+			// response.removeHeaders("Content-Length");
+			// }
+			// response.addHeader(
+			// "Content-Length",
+			// new Long(ent.getContentLength()).toString());
+			// if (response.containsHeader("Transfer-Encoding"))
+			// {
+			//
+			// response.removeHeaders("Transfer-Encoding");
+			// }
+		}
+		
 	}
-	
-	
-	
-	@SuppressWarnings({ "javadoc", "nls", "resource" })
+
+
+
+	@SuppressWarnings({ "javadoc", "resource" })
 	public static void main(String[] args) throws Exception
 	{
+		final PrintStream out =
+			new PrintStream(new FileOutputStream("output.txt"));
+		System.setOut(out);
 		final Properties p = new Properties();
 		p.load(new FileInputStream("config"));
 		final Injector inj = Guice.createInjector(new HttpProxyModule(p));
@@ -165,16 +319,16 @@ public class HttpProxy extends AbstractHttpProxy
 		final IHttpProxy proxy = inj.getInstance(HttpProxy.class);
 		proxy.bind();
 		proxy.start();
-		
+
 	}
-	
-	
+
+
 	@SuppressWarnings("javadoc")
 	@Inject
 	HttpProxy(
 		SocketFactory sockFactory,
 		ServerSocketFactory srvSockFactory,
-		
+
 		@Named("httproxy.net.port") int port,
 		@Named("httproxy.db.url") String dbURL,
 		@Named("httproxy.db.name") String dbName,
@@ -195,17 +349,34 @@ public class HttpProxy extends AbstractHttpProxy
 			dbPassword,
 			dbDriver);
 		// Add your code here
+		try
+		{
+			cache =
+				new MySqlCache(new MySqlConnectionEstablisher(
+					dbDriver,
+					dbURL,
+					dbName,
+					tblName,
+					dbUsername,
+					dbPassword));
+			cache.buildTable();
+		} catch (final SQLException e)
+		{
+			// TODO Auto-generated catch block
+			System.err.println("Failed to connect to the DB");
+			e.printStackTrace();
+		}
 	}
-	
-	
+
+
 	@Override
 	public void bind() throws IOException
 	{
 		// Add your code here
 	}
-	
-	
-	@SuppressWarnings({ "synthetic-access", "nls" })
+
+
+	@SuppressWarnings({ "synthetic-access" })
 	@Override
 	public void start()
 	{
@@ -213,7 +384,7 @@ public class HttpProxy extends AbstractHttpProxy
 		// .add(new ResponseContent(true))
 			.add(new HttpRequestInterceptor()
 			{
-				
+
 				@Override
 				public void process(HttpRequest arg0, HttpContext arg1)
 					throws HttpException,
@@ -230,9 +401,9 @@ public class HttpProxy extends AbstractHttpProxy
 		final UriHttpRequestHandlerMapper registry =
 			new UriHttpRequestHandlerMapper();
 		registry.register("*", new ProxyHandler());
-		
+
 		final HttpService httpService = new HttpService(proc, registry);
-		
+
 		try (
 			ServerSocket serverSocket =
 				srvSockFactory.createServerSocket(port, port, null))
@@ -245,7 +416,7 @@ public class HttpProxy extends AbstractHttpProxy
 				final HttpServerConnection conn =
 					DefaultBHttpServerConnectionFactory.INSTANCE
 						.createConnection(sock);
-				
+
 				handleSingleRequest(httpService, conn);
 			}
 		} catch (final IOException e)
@@ -253,11 +424,11 @@ public class HttpProxy extends AbstractHttpProxy
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		
+
 	}
-	
-	
-	@SuppressWarnings({ "static-method", "javadoc", "nls" })
+
+
+	@SuppressWarnings({ "static-method", "javadoc" })
 	private void handleSingleRequest(
 		final HttpService httpService,
 		final HttpServerConnection conn)
@@ -296,4 +467,8 @@ public class HttpProxy extends AbstractHttpProxy
 			}
 		}
 	}
+
+
+
+	ICache cache;
 }
