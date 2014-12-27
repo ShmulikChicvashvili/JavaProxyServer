@@ -83,6 +83,37 @@ public class MySqlCache implements ICache
 	}
 
 
+	/* (non-Javadoc) @see
+	 * il.technion.cs236369.proxy.ICache#delete(java.lang.String) */
+	@Override
+	public SqlError delete(String url)
+	{
+		if (url == null) { return SqlError.INVALID_PARAMS; }
+
+		if (!isExist(url)) { return SqlError.DOES_NOT_EXIST; }
+
+		try (
+			Connection con = connectionEstablisher.getConnection();
+			PreparedStatement preparedStatement =
+				(PreparedStatement) con.prepareStatement(""
+					+ "DELETE FROM "
+					+ table
+					+ " WHERE "
+					+ Columns.URL.toString().toLowerCase()
+					+ "=?;"))
+		{
+			preparedStatement.setString(1, url);
+			preparedStatement.executeUpdate();
+		} catch (final SQLException e)
+		{
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+		return SqlError.SUCCESS;
+	}
+
+
 	/* (non-Javadoc) @see il.technion.cs236369.proxy.ICache#destroyTable() */
 	@Override
 	public void destroyTable() throws SQLException
@@ -108,7 +139,7 @@ public class MySqlCache implements ICache
 	public DBRecord get(String url)
 	{
 		if (url == null) { return null; }
-		
+
 		DBRecord $ = null;
 		try (
 			Connection con = connectionEstablisher.getConnection();
@@ -144,17 +175,16 @@ public class MySqlCache implements ICache
 		}
 		return $;
 	}
-	
-	
+
+
 	/**
 	 * @param record
 	 *            The record to insert
 	 * @return SqlError
-	 * @throws SQLException
 	 *
 	 */
 	@Override
-	public SqlError insert(DBRecord record) throws SQLException
+	public SqlError insert(DBRecord record)
 	{
 		if (record == null
 			|| record.getUrl() == null
@@ -166,13 +196,15 @@ public class MySqlCache implements ICache
 			Connection con = connectionEstablisher.getConnection();
 			@SuppressWarnings("nls")
 			PreparedStatement preparedStatement =
-				(PreparedStatement) con.prepareStatement(String.format(
-					"INSERT INTO %s " + "(%s, %s, %s, %s) VALUES (?, ?, ?, ?)",
-					table,
-					Columns.URL.toString().toLowerCase(),
-					Columns.HEADER.toString().toLowerCase(),
-					Columns.BODY.toString().toLowerCase(),
-					Columns.LASTMODIFIED.toString().toLowerCase())))
+				(PreparedStatement) con.prepareStatement(String
+					.format(
+						"REPLACE INTO %s "
+							+ "(%s, %s, %s, %s) VALUES (?, ?, ?, ?)",
+						table,
+						Columns.URL.toString().toLowerCase(),
+						Columns.HEADER.toString().toLowerCase(),
+						Columns.BODY.toString().toLowerCase(),
+						Columns.LASTMODIFIED.toString().toLowerCase())))
 		{
 			preparedStatement.setString(1, record.getUrl().toLowerCase());
 			preparedStatement.setString(2, record.getHeader());
@@ -181,15 +213,13 @@ public class MySqlCache implements ICache
 			preparedStatement.executeUpdate();
 		} catch (final SQLException e)
 		{
-			if (e.getErrorCode() == insertAlreadyExist) { throw new RuntimeException();
-			// return SqlError.ALREADY_EXIST;
-			}
-			throw e;
+			if (e.getErrorCode() == insertAlreadyExist) { return SqlError.ALREADY_EXIST; }
+
 		}
 		return SqlError.SUCCESS;
 	}
-
-
+	
+	
 	/**
 	 * @param url
 	 *            The url to check if exist
@@ -226,51 +256,9 @@ public class MySqlCache implements ICache
 		}
 		return $;
 	}
-
-
-	/**
-	 * @param record
-	 *            Record to update
-	 * @return The state of the query
-	 */
-	@Override
-	public SqlError update(DBRecord record)
-	{
-		if (record == null
-			|| record.getUrl() == null
-			|| record.getHeader() == null
-			|| record.getBody() == null
-			|| record.getLastModified() == null) { return SqlError.INVALID_PARAMS; }
-
-		if (!isExist(record.getUrl())) { return SqlError.DOES_NOT_EXIST; }
-
-		try (
-			Connection con = connectionEstablisher.getConnection();
-			@SuppressWarnings("nls")
-			PreparedStatement preparedStatement =
-				(PreparedStatement) con.prepareStatement(String.format(
-					"UPDATE %s SET %s = ?, %s = ?, %s = ? WHERE %s = ?",
-					table,
-					Columns.HEADER.toString().toLowerCase(),
-					Columns.BODY.toString().toLowerCase(),
-					Columns.LASTMODIFIED.toString().toLowerCase(),
-					Columns.URL.toString().toLowerCase())))
-		{
-			preparedStatement.setString(1, record.getHeader());
-			preparedStatement.setBlob(2, record.getBody());
-			preparedStatement.setString(3, record.getLastModified());
-			preparedStatement.setString(4, record.getUrl().toLowerCase());
-			preparedStatement.executeUpdate();
-		} catch (final SQLException e)
-		{
-			e.printStackTrace();
-		}
-
-		return SqlError.SUCCESS;
-	}
-
-
-
+	
+	
+	
 	/**
 	 * The connection handler
 	 */
@@ -280,7 +268,7 @@ public class MySqlCache implements ICache
 	 * The table's name in the database
 	 */
 	private final String table;
-
+	
 	/**
 	 * The error code that returned when entry in database already exist
 	 */
