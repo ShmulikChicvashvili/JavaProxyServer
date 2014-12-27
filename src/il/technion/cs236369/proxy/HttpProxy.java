@@ -95,14 +95,21 @@ public class HttpProxy extends AbstractHttpProxy
 						DefaultBHttpClientConnectionFactory.INSTANCE
 							.createConnection(sock))
 				{
+
 					getResponseFromServer(request, response, context, conn);
-					if (Utils.isAcceptingGzip(request))
+
+					if (Utils.isAcceptingGzip(request)
+						&& (!response.containsHeader("Content-Encoding") || !response
+							.getFirstHeader("Content-Encoding")
+							.getValue()
+							.equals("gzip")))
 					{
-						
-						responseGZipEntity(
-							response,
-							(ByteArrayEntity) response.getEntity());
-						
+						if (response != null)
+						{
+							responseGZipEntity(
+								response,
+								(ByteArrayEntity) response.getEntity());
+						}
 					}
 					responseSetContentHeaders(response, context);
 					
@@ -208,24 +215,35 @@ public class HttpProxy extends AbstractHttpProxy
 			{
 				try
 				{
-					final Blob body =
-						new SerialBlob(EntityUtils.toByteArray(response
-							.getEntity()));
-					System.out.println("entity response");
-					System.out.println(response.getEntity().getContentLength());
-					if (body.length() < 65535)
+					final String url = request.getRequestLine().getUri();
+
+					final byte[] initBody = "".getBytes();
+					Blob body = new SerialBlob(initBody);
+
+					if (response.getEntity() != null)
 					{
-
-						System.out.println("Inserting body of size");
-						System.out.println(body.length());
-						cache.insert(new DBRecord(
-							request.getRequestLine().getUri(),
-							Utils.responseToString(response),
-							body,
-							""));
-
+						body =
+							new SerialBlob(EntityUtils.toByteArray(response
+								.getEntity()));
 					}
 
+					System.out.println("entity response");
+					System.out.println(response.getEntity().getContentLength());
+					
+					if (body.length() < 65535 && url.length() < 256)
+					{
+						
+						System.out.println("Inserting body of size");
+						System.out.println(body.length());
+						
+						cache.insert(new DBRecord(url, Utils
+							.responseToString(response), body, response
+							.containsHeader("Last-Modified") == true ? response
+							.getFirstHeader("Last-Modified")
+							.getValue() : ""));
+						
+					}
+					
 				} catch (final Exception e)
 				{
 					e.printStackTrace();
@@ -244,15 +262,21 @@ public class HttpProxy extends AbstractHttpProxy
 			HttpResponse response,
 			ByteArrayEntity entity) throws IOException, ParseException
 		{
+			if (entity == null) { return; }
 			final byte[] ent =
 				GZipHandler.compress(EntityUtils.toString(entity));
-			entity = new ByteArrayEntity(ent);
-			responseSetHeaders(response, entity);
-			assert response
-				.getFirstHeader("Content-Length")
-				.getValue()
-				.equals(entity.getContentLength());
-			EntityUtils.updateEntity(response, entity);
+			if (ent != null)
+			{
+				entity = new ByteArrayEntity(ent);
+				responseSetHeaders(response, entity);
+
+				assert response
+					.getFirstHeader("Content-Length")
+					.getValue()
+					.equals(entity.getContentLength());
+
+				EntityUtils.updateEntity(response, entity);
+			}
 		}
 
 
