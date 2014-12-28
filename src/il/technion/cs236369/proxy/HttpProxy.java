@@ -3,11 +3,11 @@ package il.technion.cs236369.proxy;
 
 
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.PrintStream;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.sql.Blob;
 import java.sql.SQLException;
 import java.util.Properties;
@@ -174,9 +174,32 @@ public class HttpProxy extends AbstractHttpProxy
 		 */
 		private HttpHost getRequestHost(HttpRequest request)
 		{
-			assert !request.containsHeader("Host");
-			final HttpHost host =
-				new HttpHost(request.getHeaders("host")[0].getValue(), 80);
+			System.out.println("request:");
+			System.out.println(request.toString());
+			System.out.println("Host header length: "
+				+ request.getHeaders("Host").length);
+			System.out.println("Host header exists: "
+				+ request.containsHeader("Host"));
+			assert request.containsHeader("Host");
+
+			HttpHost host = null;
+			if (!request.containsHeader("Host"))
+			{
+				try
+				{
+					final URI uri = new URI(request.getRequestLine().getUri());
+					host = new HttpHost(uri.getHost(), 80);
+				} catch (final URISyntaxException e)
+				{
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			} else
+			{
+
+				host =
+					new HttpHost(request.getHeaders("Host")[0].getValue(), 80);
+			}
 			return host;
 		}
 
@@ -365,9 +388,9 @@ public class HttpProxy extends AbstractHttpProxy
 	@SuppressWarnings({ "javadoc", "resource" })
 	public static void main(String[] args) throws Exception
 	{
-		final PrintStream out =
-			new PrintStream(new FileOutputStream("output.txt"));
-		System.setOut(out);
+		// final PrintStream out =
+		// new PrintStream(new FileOutputStream("output.txt"));
+		// System.setOut(out);
 		final Properties p = new Properties();
 		p.load(new FileInputStream("config"));
 		final Injector inj = Guice.createInjector(new HttpProxyModule(p));
@@ -536,6 +559,7 @@ public class HttpProxy extends AbstractHttpProxy
 			try
 			{
 				conn.shutdown();
+				// throw new IOException();
 			} catch (final IOException ignore)
 			{
 				System.err.println("HttoServerConnection shutdown failed");
