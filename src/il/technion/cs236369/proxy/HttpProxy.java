@@ -56,6 +56,9 @@ import com.google.inject.name.Named;
  */
 @SuppressWarnings("nls")
 public class HttpProxy extends AbstractHttpProxy {
+	private static void log(String s){
+		System.out.println(s);
+	}
 	@SuppressWarnings("javadoc")
 	private class ProxyHandler implements HttpRequestHandler {
 		/*
@@ -70,18 +73,18 @@ public class HttpProxy extends AbstractHttpProxy {
 			if (request.containsHeader(HttpHeaders.CACHE_CONTROL)
 					&& request.getFirstHeader(HttpHeaders.CACHE_CONTROL)
 							.getValue().equals("no-cache")) {
-				System.out.println("Generating response from server");
+				log("Generating response from server");
 				genResponseFromServer(request, response, context);
 			} else {
-				System.out.println("Generating response from cache");
+				log("Generating response from cache");
 				genResponseFromCache(request, response, context);
 			}
 
-			System.out.println("Request:");
-			System.out.println(request.toString());
-			System.out.println("Response:");
-			System.out.println(response.toString());
-			System.out.println("");
+			log("Request:");
+			log(request.toString());
+			log("Response:");
+			log(response.toString());
+			log("");
 		}
 
 		private void genResponseFromCache(HttpRequest request,
@@ -89,8 +92,8 @@ public class HttpProxy extends AbstractHttpProxy {
 				HttpException {
 			final String url = request.getRequestLine().getUri();
 			if (!cache.isExist(url)) {
-				System.out.println("URL " + url + " not found in cache.");
-				System.out.println("Generating response from server instead");
+				log("URL " + url + " not found in cache.");
+				log("Generating response from server instead");
 				genResponseFromServer(request, response, context);
 				return;
 			}
@@ -123,7 +126,7 @@ public class HttpProxy extends AbstractHttpProxy {
 				HttpResponse response, HttpContext context) throws IOException,
 				HttpException {
 			final HttpHost host = getRequestHost(request);
-			System.out.println("Host:" + host.getHostName());
+			log("Host:" + host.getHostName());
 
 			try (HttpClientConnection conn = DefaultBHttpClientConnectionFactory.INSTANCE
 					.createConnection(sockFactory.createSocket(
@@ -187,10 +190,10 @@ public class HttpProxy extends AbstractHttpProxy {
 		 */
 		private void dbRecordToResponse(DBRecord rec, HttpResponse response)
 				throws IOException {
-			System.out.println("Sending resource from cache");
+			log("Sending resource from cache");
 
-			System.out.println("Printing headers:");
-			System.out.println(rec.getHeader());
+			log("Printing headers:");
+			log(rec.getHeader());
 
 			response.setStatusLine(HttpVersion.HTTP_1_1, 200, "OK");
 			Utils.stringToResponse(rec.getHeader(), response);
@@ -222,14 +225,14 @@ public class HttpProxy extends AbstractHttpProxy {
 			final HttpResponse serverResponse = httpExecutor.execute(request,
 					conn, context);
 
-			System.out.println("Server response status: "
+			log("Server response status: "
 					+ serverResponse.getStatusLine().toString());
 
 			response.setStatusLine(serverResponse.getStatusLine());
 			response.setHeaders(serverResponse.getAllHeaders());
 
 			if (serverResponse.getEntity() != null) {
-				System.out.println("Original length: "
+				log("Original length: "
 						+ serverResponse.getEntity().getContentLength());
 
 				final ByteArrayEntity entity = new ByteArrayEntity(
@@ -305,7 +308,7 @@ public class HttpProxy extends AbstractHttpProxy {
 					body = new SerialBlob(EntityUtils.toByteArray(response
 							.getEntity()));
 
-					System.out.println("entity response length: "
+					log("entity response length: "
 							+ response.getEntity().getContentLength());
 				}
 
@@ -316,7 +319,7 @@ public class HttpProxy extends AbstractHttpProxy {
 					return;
 				}
 
-				System.out.println("Inserting body of size: " + body.length());
+				log("Inserting body of size: " + body.length());
 
 				cache.insert(new DBRecord(url, headers, body, lastModified));
 
@@ -444,10 +447,10 @@ public class HttpProxy extends AbstractHttpProxy {
 						if (response.containsHeader(HttpHeaders.CONTENT_LENGTH)) {
 							response.removeHeaders(HttpHeaders.CONTENT_LENGTH);
 						}
-						if (response
-								.containsHeader(HttpHeaders.TRANSFER_ENCODING)) {
-							response.removeHeaders(HttpHeaders.TRANSFER_ENCODING);
-						}
+//						if (response
+//								.containsHeader(HttpHeaders.TRANSFER_ENCODING)) {
+//							response.removeHeaders(HttpHeaders.TRANSFER_ENCODING);
+//						}
 
 					}
 				}).add(new ResponseContent())
@@ -490,12 +493,12 @@ public class HttpProxy extends AbstractHttpProxy {
 	private void handleSingleRequest(final HttpService httpService,
 			final HttpServerConnection conn) {
 		System.err.flush();
-		System.out.println("@@@ Handling new request @@@");
+		log("@@@ Handling new request @@@");
 		final HttpContext context = new BasicHttpContext(null);
 		try {
 			while (!Thread.interrupted() && conn.isOpen()) {
 				System.err.flush();
-				System.out.println("### handling same connection ###");
+				log("### handling same connection ###");
 				httpService.handleRequest(conn, context);
 			}
 		} catch (final ConnectionClosedException ex) {
@@ -507,7 +510,7 @@ public class HttpProxy extends AbstractHttpProxy {
 			System.err.println("Unrecoverable HTTP protocol violation: "
 					+ ex.getMessage());
 		} finally {
-			System.out.println("================================");
+			log("================================");
 			try {
 				conn.shutdown();
 				// throw new IOException();
