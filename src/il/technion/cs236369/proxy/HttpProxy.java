@@ -422,7 +422,8 @@ public class HttpProxy extends AbstractHttpProxy {
 	@SuppressWarnings({ "synthetic-access" })
 	@Override
 	public void start() {
-		final HttpProcessor proc = HttpProcessorBuilder.create()
+		final HttpProcessor proc = HttpProcessorBuilder
+				.create()
 				.add(new HttpRequestInterceptor() {
 
 					@Override
@@ -433,7 +434,8 @@ public class HttpProxy extends AbstractHttpProxy {
 						}
 						req.addHeader(HttpHeaders.CONNECTION, "close");
 					}
-				}).add(new HttpResponseInterceptor() {
+				})
+				.add(new HttpResponseInterceptor() {
 
 					@Override
 					public void process(HttpResponse response,
@@ -448,7 +450,20 @@ public class HttpProxy extends AbstractHttpProxy {
 						}
 
 					}
-				}).add(new ResponseContent()).build();
+				}).add(new ResponseContent())
+				.add(new HttpResponseInterceptor() {
+
+					@Override
+					public void process(HttpResponse response,
+							HttpContext context) throws HttpException,
+							IOException {
+						if (response.containsHeader(HttpHeaders.CONNECTION)) {
+							response.removeHeaders(HttpHeaders.CONNECTION);
+						}
+						response.addHeader(HttpHeaders.CONNECTION, "close");
+
+					}
+				}).build();
 		final UriHttpRequestHandlerMapper registry = new UriHttpRequestHandlerMapper();
 		registry.register("*", new ProxyHandler());
 
