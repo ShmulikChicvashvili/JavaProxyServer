@@ -1,0 +1,395 @@
+#LyX 2.1 created this file. For more info see http://www.lyx.org/
+\lyxformat 474
+\begin_document
+\begin_header
+\textclass article
+\use_default_options true
+\maintain_unincluded_children false
+\language english
+\language_package default
+\inputencoding auto
+\fontencoding global
+\font_roman default
+\font_sans default
+\font_typewriter default
+\font_math auto
+\font_default_family default
+\use_non_tex_fonts false
+\font_sc false
+\font_osf false
+\font_sf_scale 100
+\font_tt_scale 100
+\graphics default
+\default_output_format default
+\output_sync 0
+\bibtex_command default
+\index_command default
+\paperfontsize default
+\use_hyperref false
+\papersize default
+\use_geometry false
+\use_package amsmath 1
+\use_package amssymb 1
+\use_package cancel 1
+\use_package esint 1
+\use_package mathdots 1
+\use_package mathtools 1
+\use_package mhchem 1
+\use_package stackrel 1
+\use_package stmaryrd 1
+\use_package undertilde 1
+\cite_engine basic
+\cite_engine_type default
+\biblio_style plain
+\use_bibtopic false
+\use_indices false
+\paperorientation portrait
+\suppress_date false
+\justification true
+\use_refstyle 1
+\index Index
+\shortcut idx
+\color #008000
+\end_index
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation indent
+\paragraph_indentation default
+\quotes_language english
+\papercolumns 1
+\papersides 1
+\paperpagestyle default
+\tracking_changes false
+\output_changes false
+\html_math_output 0
+\html_css_as_file 0
+\html_be_strict false
+\end_header
+
+\begin_body
+
+\begin_layout Title
+236369 - Managing Data on the World-Wide Web 
+\end_layout
+
+\begin_layout Date
+12/28/14
+\end_layout
+
+\begin_layout Author
+Merabi Shmulik Chicvashvili - 317655157
+\begin_inset Newline newline
+\end_inset
+
+Eyal Tolchinsky - 311505564
+\end_layout
+
+\begin_layout Abstract
+Zipping algorithms this days are basically based on searching patterns in
+ the source text/file.
+ When such patterns are discovered each zipping algorithm makes its own
+ operations and outputs zipped text/file.
+ Eventually there are more benefits than drawbacks, most of the files contain
+ a lot of patterns and redundant information so zipping is recommended.
+ It is estimated that the total amount of data that is stored on the world's
+ storage devices could be further compressed with existing compression algorithm
+s by a remaining average factor of 4.5:1.
+ It is estimated that the combined technological capacity of the world to
+ store information provides 1,300 exabytes of hardware digits in 2007, but
+ when the corresponding content is optimally compressed, this only represents
+ 295 exabytes of Shannon information.
+\end_layout
+
+\begin_layout Abstract
+\begin_inset Graphics
+	filename C:/Users/Shmulik/Pictures/gzip.jpg
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Section*
+Benefits
+\end_layout
+
+\begin_layout Standard
+Probabilistic most of the files/texts contain patterns, and big ones! So
+ its easy to understand that we reduce the traffic over the internet and
+ the size of the files.
+ When reducing the size of files there is one immediate benefit, we can
+ easily send more files and resources over one connection.
+ Furthermore, zipped files will reach to the server faster therefore browsing
+ in a site which handles and accepts zipped files will work faster.
+\end_layout
+
+\begin_layout Section*
+Drawbacks
+\end_layout
+
+\begin_layout Standard
+File compression algorithms are intense mathematical operations, therefore
+ compression and decompression of large files are heavy operations which
+ will take time.
+ It's better to use zipping for big amount of small files.
+ Furthermore, in files which will not contain patterns and any redundant
+ information that in that case we will add information more than we will
+ reduce.
+\end_layout
+
+\begin_layout Section*
+Good Scenario
+\end_layout
+
+\begin_layout Standard
+Lets take for example the song 'Get Lucky' by Daft Punk:
+\end_layout
+
+\begin_layout Verse
+Like the legend of the Phoenix All ends with beginnings What keeps the planets
+ spinning (uh) The force from the beginning
+\end_layout
+
+\begin_layout Verse
+(Look)
+\end_layout
+
+\begin_layout Verse
+We've come too far to give up who we are So let's raise the bar and our
+ cups to the stars
+\end_layout
+
+\begin_layout Verse
+She's up all night to the sun I'm up all night to get some She's up all
+ night for good fun I'm up all night to get lucky
+\end_layout
+
+\begin_layout Verse
+We're up all night to the sun
+\end_layout
+
+\begin_layout Verse
+We're up all night to get some 
+\end_layout
+
+\begin_layout Verse
+We're up all night for good fun 
+\end_layout
+
+\begin_layout Verse
+We're up all night to get lucky
+\end_layout
+
+\begin_layout Verse
+We're up all night to get lucky 
+\end_layout
+
+\begin_layout Verse
+We're up all night to get lucky 
+\end_layout
+
+\begin_layout Verse
+We're up all night to get lucky 
+\end_layout
+
+\begin_layout Verse
+We're up all night to get lucky
+\end_layout
+
+\begin_layout Verse
+The present has no ribbon Your gift keeps on giving, What is this I'm feeling?
+ If you wanna leave I'm with it (ah)
+\end_layout
+
+\begin_layout Verse
+We've come too far to give up who we are So let's raise the bar and our
+ cups to the stars
+\end_layout
+
+\begin_layout Verse
+She's up all night to the sun I'm up all night to get some She's up all
+ night for good fun I'm up all night to get lucky
+\end_layout
+
+\begin_layout Verse
+We're up all night to the sun 
+\end_layout
+
+\begin_layout Verse
+We're up all night to get some 
+\end_layout
+
+\begin_layout Verse
+We're up all night for good fun 
+\end_layout
+
+\begin_layout Verse
+We're up all night to get lucky
+\end_layout
+
+\begin_layout Verse
+We're up all night to get lucky 
+\end_layout
+
+\begin_layout Verse
+We're up all night to get lucky
+\end_layout
+
+\begin_layout Verse
+We're up all night to get lucky
+\end_layout
+
+\begin_layout Verse
+We're up all night to get lucky
+\end_layout
+
+\begin_layout Verse
+(We're up all night to get 
+\end_layout
+
+\begin_layout Verse
+We're up all night to get 
+\end_layout
+
+\begin_layout Verse
+We're up all night to get 
+\end_layout
+
+\begin_layout Verse
+We're up all night to get)
+\end_layout
+
+\begin_layout Verse
+(We're up all night to get (together) 
+\end_layout
+
+\begin_layout Verse
+We're up all night to get (let's get funked again)
+\end_layout
+
+\begin_layout Verse
+We're up all night to get lucky 
+\end_layout
+
+\begin_layout Verse
+We're up all night to get lucky)
+\end_layout
+
+\begin_layout Verse
+(We're up all night to get lucky 
+\end_layout
+
+\begin_layout Verse
+We're up all night to get lucky 
+\end_layout
+
+\begin_layout Verse
+We're up all night to get lucky 
+\end_layout
+
+\begin_layout Verse
+We're up all night to get lucky)
+\end_layout
+
+\begin_layout Verse
+(We're up all night to get lucky
+\end_layout
+
+\begin_layout Verse
+We're up all night to get lucky 
+\end_layout
+
+\begin_layout Verse
+We're up all night to get lucky 
+\end_layout
+
+\begin_layout Verse
+We're up all night to get lucky)
+\end_layout
+
+\begin_layout Verse
+We've (we're up all night to get lucky) Come too far (we're up all night
+ to get lucky) To give up (we're up all night to get lucky) Who we are (we're
+ up all night to get lucky) So let's (we're up all night to get lucky) Raise
+ the bar (we're up all night to get lucky) And our cups (we're up all night
+ to get lucky) To the stars (we're up all night to get lucky)
+\end_layout
+
+\begin_layout Verse
+She's up all night to the sun I'm up all night to get some She's up all
+ night for good fun I'm up all night to get lucky
+\end_layout
+
+\begin_layout Verse
+We're up all night to the sun 
+\end_layout
+
+\begin_layout Verse
+We're up all night to get some 
+\end_layout
+
+\begin_layout Verse
+We're up all night for good fun 
+\end_layout
+
+\begin_layout Verse
+We're up all night to get lucky
+\end_layout
+
+\begin_layout Verse
+We're up all night to get lucky
+\end_layout
+
+\begin_layout Verse
+We're up all night to get lucky 
+\end_layout
+
+\begin_layout Verse
+We're up all night to get lucky
+\end_layout
+
+\begin_layout Verse
+We're up all night to get lucky
+\end_layout
+
+\begin_layout Verse
+We're up all night to get lucky 
+\end_layout
+
+\begin_layout Verse
+We're up all night to get lucky 
+\end_layout
+
+\begin_layout Verse
+We're up all night to get lucky 
+\end_layout
+
+\begin_layout Verse
+We're up all night to get lucky 
+\end_layout
+
+\begin_layout Standard
+As we can see there are many patterns in this song, so it will make a good
+ compressed file.
+\end_layout
+
+\begin_layout Section*
+Bad Scenario
+\end_layout
+
+\begin_layout Standard
+Lets take for example the next phrase: 
+\end_layout
+
+\begin_layout Quotation
+The quick brown fox jumps over the lazy dog
+\end_layout
+
+\begin_layout Standard
+The phrase contains 43 characters but in the end after zipping it we get
+ 62 characters, this could be explained by that there is no patterns in
+ that phrase.
+\end_layout
+
+\end_body
+\end_document
