@@ -49,15 +49,17 @@ import com.google.inject.Injector;
 import com.google.inject.name.Named;
 
 /**
+ * Merabi Shmulik Chicvashvili 317655157 shmulikjkech@gmail.com <br>
+ * Eyal Tolchinsky 311505564 eyal.tolchinsky@gmail.com
  * @author Shmulik and Eyal
- *
+ * 
  *         Created at : 11:37 AM 3.12.14
  *
  */
 @SuppressWarnings("nls")
 public class HttpProxy extends AbstractHttpProxy {
 	private static void log(String s){
-		System.out.println(s);
+//		System.out.println(s);
 	}
 	@SuppressWarnings("javadoc")
 	private class ProxyHandler implements HttpRequestHandler {
