@@ -12,6 +12,7 @@ import il.technion.cs236369.proxy.test.BlockingSocket;
 import il.technion.cs236369.proxy.test.RequestExpectingSocket;
 import il.technion.cs236369.proxy.test.ResponseExpectingSocket;
 
+import org.apache.http.HttpHost;
 import org.apache.http.HttpStatus;
 import org.apache.http.HttpVersion;
 import org.apache.http.message.BasicHttpRequest;
@@ -29,6 +30,7 @@ import com.google.inject.Injector;
 public class BasicTest {
 
 	private final static String requestedURL = "http://jquery.com/index.html";
+	private final static HttpHost target = new HttpHost("jquery.com",80,"http");
 
 	private HttpProxyTestModule module;
 	private ResponseExpectingSocket clientToProxySocket1;
@@ -39,8 +41,10 @@ public class BasicTest {
 
 		module = new HttpProxyTestModule();
 
-		BasicHttpRequest httpRequest = new BasicHttpRequest("GET", requestedURL);
+		BasicHttpRequest httpRequest = new BasicHttpRequest("GET", requestedURL ,HttpVersion.HTTP_1_1);
+		httpRequest.addHeader("host", target.getHostName());
 		httpRequest.addHeader("Accept-Encoding", "gzip,deflate");
+		
 		clientToProxySocket1 = spy(new ResponseExpectingSocket(httpRequest));
 
 
