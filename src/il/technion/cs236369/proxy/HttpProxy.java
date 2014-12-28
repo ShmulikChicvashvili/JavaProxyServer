@@ -28,7 +28,6 @@ import org.apache.http.HttpResponseInterceptor;
 import org.apache.http.HttpServerConnection;
 import org.apache.http.HttpVersion;
 import org.apache.http.ParseException;
-import org.apache.http.ProtocolVersion;
 import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.impl.DefaultBHttpClientConnectionFactory;
 import org.apache.http.impl.DefaultBHttpServerConnectionFactory;
